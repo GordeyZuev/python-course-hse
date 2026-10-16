@@ -10,3 +10,5 @@ venv/
 # Файлы, которые лекция создаёт при запуске ноутбука
 Other/notes.txt
 Other/pending.txt
+
+.agents/
