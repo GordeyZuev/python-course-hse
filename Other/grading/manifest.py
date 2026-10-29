@@ -32,7 +32,10 @@ def load_assignments(root):
             raise ValueError(f'{config}: invalid or duplicate homework id')
         if not isinstance(value.get('title'), str) or not value['title'].strip():
             raise ValueError(f'{key}: title is required')
-        deadline = dt.datetime.fromisoformat(value['deadline'].replace('Z', '+00:00'))
+        try:
+            deadline = dt.datetime.fromisoformat(value['deadline'].replace('Z', '+00:00'))
+        except (KeyError, TypeError, AttributeError, ValueError) as error:
+            raise ValueError(f'{key}: deadline must be an ISO date and time with a timezone') from error
         if deadline.tzinfo is None:
             raise ValueError(f'{key}: deadline needs a timezone')
         if type(value.get('attempts')) is not int or value['attempts'] < 1:
@@ -62,6 +65,8 @@ def load_assignments(root):
             raise ValueError(f'{key}: dependencies must be pinned package==version strings')
         assignments[key] = {k: v for k, v in value.items() if k not in ('id', 'enabled')}
         assignments[key].update(path=config.parent.relative_to(root).as_posix(), dependencies=dependencies)
+        if any(char in assignments[key]['path'] for char in '*?[]\n\r'):
+            raise ValueError(f'{key}: homework path must not contain GitHub glob characters or newlines')
     if not assignments:
         raise ValueError('No enabled homework.json found under Materials')
     folders = [hw['path'] for hw in assignments.values()]
