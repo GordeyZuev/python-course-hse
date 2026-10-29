@@ -7,6 +7,37 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import selectors
+import time
+
+
+COMPLETED = b'course-tests-completed\n'
+
+
+def bounded_run(command, timeout, max_bytes=4096):
+    """Drain a bounded completion channel; kill noisy or stalled processes."""
+    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as process:
+        deadline = time.monotonic() + timeout
+        output = bytearray()
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            try:
+                while True:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise subprocess.TimeoutExpired(command, timeout)
+                    if not selector.select(remaining):
+                        raise subprocess.TimeoutExpired(command, timeout)
+                    chunk = os.read(process.stdout.fileno(), 4096)
+                    if not chunk:
+                        return process.wait(timeout=max(0.01, deadline-time.monotonic())), bytes(output)
+                    output.extend(chunk)
+                    if len(output) > max_bytes:
+                        process.kill()
+                        return -1, b''
+            finally:
+                if process.poll() is None:
+                    process.kill()
 
 
 def execute(hw, source, trusted, image):
@@ -25,20 +56,25 @@ def execute(hw, source, trusted, image):
                 else:
                     target.write_text('raise NotImplementedError("No solution submitted")\n')
             name = 'hse-' + os.urandom(8).hex()
-            command = ['docker', 'run', '--name', name, '--rm', '--network=none', '--read-only',
+            command = ['docker', 'run', '--name', name, '--network=none', '--read-only',
                        '--cap-drop=ALL', '--security-opt=no-new-privileges', '--pids-limit=64',
                        '--memory=256m', '--cpus=1', '--user=65534:65534',
                        '--tmpfs=/tmp:rw,nosuid,size=64m', '-v', f'{work}/hw:/input:ro',
-                       '-w', '/tmp', image, 'python', '-I', '-c',
-                       'import shutil,os,runpy; shutil.copytree("/input","/tmp/hw"); '
-                       f'os.chdir("/tmp/hw/{task["id"]}"); '
-                       'import sys; sys.path.insert(0,os.getcwd()); runpy.run_path("test.py",run_name="__main__")']
-            # Bound disk/log usage too; never forward arbitrary student output to GitHub.
+                       '-w', '/tmp', image, 'python', '-I', '/checker.py', task['id']]
             try:
-                completed = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
-                if completed.returncode in (125,126,127):
-                    raise RuntimeError('Container infrastructure failed')
-                passed = completed.returncode == 0
+                code, output = bounded_run(command, timeout=20)
+                if code != -1:
+                    try:
+                        inspected = subprocess.run(['docker','inspect','--format','{{json .State}}',name],
+                                                   check=True,capture_output=True,text=True,timeout=10)
+                        state = json.loads(inspected.stdout)
+                    except (subprocess.SubprocessError,ValueError) as error:
+                        raise RuntimeError('Cannot establish container execution status') from error
+                    if state.get('Status') != 'exited' or state.get('Error'):
+                        raise RuntimeError('Container infrastructure failed')
+                if output == b'course-infrastructure-error\n':
+                    raise RuntimeError('Test environment could not be prepared')
+                passed = code == 0 and output == COMPLETED
                 status = 'passed' if passed else 'failed'
             except subprocess.TimeoutExpired:
                 passed, status = False, 'timeout'
@@ -75,8 +111,10 @@ def main():
         result['status']='graded'
     args.output.mkdir(parents=True,exist_ok=True)
     (args.output/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
-    lines=[f'## {hw["title"]}',f'Статус: {result["status"]}',f'Попытка {number} / {limit}']
+    labels={'graded':'Проверено','late':'Дедлайн прошёл; сдача не зачтена','limit':'Лимит попыток исчерпан'}
+    lines=[f'## {hw["title"]}',labels[result['status']]]
     if result['status']=='graded':
+        lines.append(f'Попытка {number} / {limit}')
         lines += [f'Балл за эту сдачу: **{result["score"]} / 10**','', '| Задача | Балл | Статус |','|---|---:|---|']
         lines += [f'| {t["id"]} | {t["points"]} | {t["status"]} |' for t in result['tasks']]
     lines += ['', 'Официальная ведомость обновляется после проверки происхождения результата, раз в три часа.']
