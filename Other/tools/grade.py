@@ -34,16 +34,16 @@ def earned(folder, name):
     script = ROOT / folder / name / "test.py"
     try:
         completed = subprocess.run(
-            [sys.executable, str(script)],
+            [sys.executable, str(Path(__file__).resolve().parents[1] / "grading" / "container_check.py"), "--local", str(script)],
             cwd=script.parent,
-            stdout=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             timeout=TEST_TIMEOUT_SECONDS,
         )
     except subprocess.TimeoutExpired:
         print(f"{folder}/{name}: проверка не завершилась за {TEST_TIMEOUT_SECONDS} с", file=sys.stderr)
         return False
-    return completed.returncode == 0
+    return completed.returncode == 0 and completed.stdout == b"course-tests-completed\n"
 
 
 def report(title, folder, tasks):

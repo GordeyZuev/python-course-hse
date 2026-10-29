@@ -31,6 +31,11 @@ def check(script):
 
 
 def main():
+    if len(sys.argv) == 3 and sys.argv[1] == '--local':
+        script = os.path.abspath(sys.argv[2])
+        os.chdir(os.path.dirname(script))
+        sys.path.insert(0, os.getcwd())
+        return check(script)
     try:
         shutil.copytree('/input', '/tmp/hw')
         os.chdir('/tmp/hw/' + sys.argv[1])
