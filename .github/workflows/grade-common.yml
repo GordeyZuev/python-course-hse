@@ -1,0 +1,49 @@
+name: Shared homework grader
+on:
+  workflow_call:
+    inputs:
+      homework:
+        required: true
+        type: string
+      policy_key:
+        required: true
+        type: string
+      grader_sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: submission
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: GordeyZuev/python-course-hse
+          ref: ${{ inputs.grader_sha }}
+          path: trusted
+          persist-credentials: false
+      - name: Read GitHub receipt time
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          created=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .created_at)
+          echo "RUN_CREATED_AT=$created" >> "$GITHUB_ENV"
+      - name: Grade
+        env:
+          HOMEWORK: ${{ inputs.homework }}
+          GRADER_SHA: ${{ inputs.grader_sha }}
+          COURSE_ATTEMPTS: ${{ vars[format('{0}_ATTEMPTS', inputs.policy_key)] }}
+          COURSE_DEADLINE: ${{ vars[format('{0}_DEADLINE', inputs.policy_key)] }}
+        run: python trusted/Other/grading/worker.py --hw "$HOMEWORK" --source submission --trusted trusted --output result
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: grade-${{ inputs.homework }}
+          path: result/result.json
+          retention-days: 30
