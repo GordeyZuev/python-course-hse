@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2] / "Materials" / "Pro" / "Homeworks" / "HW_Mini"
+TEST_TIMEOUT_SECONDS = 10
 
 HW = [
     ('HW 1', 'HW_1', [
@@ -31,17 +32,18 @@ HW = [
         ('№15. silent', '15_silent', 1, True),
     ]),
     ('HW 2', 'HW_2', [
-        ('№1. take', '01_take', 1, False),
-        ('№2. running', '02_running', 1, False),
-        ('№3. window', '03_window', 1, False),
-        ('№4. chain', '04_chain', 1, False),
-        ('№5. group_runs', '05_group_runs', 1, False),
-        ('№6. pad_zip', '06_pad_zip', 1, False),
-        ('№7. replay', '07_replay', 1.5, False),
-        ('№8. read_lines', '08_read_lines', 1, False),
-        ('№9. save_total', '09_save_total', 1.5, False),
-        ('№10. totaler', '10_totaler', 1, True),
-        ('№11. read_chunks', '11_read_chunks', 1, True),
+        ('№1. take', '01_take', 0.5, False),
+        ('№2. running', '02_running', 0.6, False),
+        ('№3. chain', '03_chain', 0.7, False),
+        ('№4. replay', '04_replay', 0.7, False),
+        ('№5. window', '05_window', 0.8, False),
+        ('№6. group_runs', '06_group_runs', 0.8, False),
+        ('№7. pad_zip', '07_pad_zip', 0.8, False),
+        ('№8. calls', '08_calls', 0.9, False),
+        ('№9. shift', '09_shift', 0.9, False),
+        ('№10. read_lines', '10_read_lines', 1, False),
+        ('№11. save_total', '11_save_total', 1.1, False),
+        ('№12. round_robin', '12_round_robin', 1.2, False),
     ]),
 ]
 
@@ -55,12 +57,17 @@ def fmt(value):
 
 def earned(folder, name):
     script = ROOT / folder / name / "test.py"
-    completed = subprocess.run(
-        [sys.executable, str(script)],
-        cwd=script.parent,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        completed = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=script.parent,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=TEST_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        print(f"{folder}/{name}: проверка не завершилась за {TEST_TIMEOUT_SECONDS} с", file=sys.stderr)
+        return False
     return completed.returncode == 0
 
 
@@ -75,12 +82,16 @@ def report(title, folder, tasks):
         else:
             required += got
         print(f"{label}: {fmt(got)} / {fmt(points)}")
-    total = min(10, required + bonus)
     bonus_max = sum(points for _, _, points, is_bonus in tasks if is_bonus)
+    required_max = sum(points for _, _, points, is_bonus in tasks if not is_bonus)
     print()
-    print(f"Обязательные: {fmt(required)} / 10")
-    print(f"Бонусы: {fmt(bonus)} / {fmt(bonus_max)}")
-    print(f"Итог: {fmt(total)} / 10")
+    if bonus_max:
+        total = min(10, required + bonus)
+        print(f"Обязательные: {fmt(required)} / 10")
+        print(f"Бонусы: {fmt(bonus)} / {fmt(bonus_max)}")
+        print(f"Итог: {fmt(total)} / 10")
+    else:
+        print(f"Итог: {fmt(required)} / {fmt(required_max)}")
     print()
 
 
