@@ -1,4 +1,4 @@
-"""Отчёт баллов по HW 1 и HW 2.
+"""Локальный отчёт баллов по опубликованным ДЗ.
 
 Запуск из корня репозитория курса:
 
@@ -15,9 +15,12 @@ TEST_TIMEOUT_SECONDS = 10
 
 import json
 import argparse
+import os
 
-MANIFEST = json.loads(Path(__file__).with_name("assignments.json").read_text())
-HW = [(v["title"], Path(v["path"]).name,
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "grading"))
+from manifest import load_assignments
+MANIFEST = load_assignments(Path(__file__).resolve().parents[2])
+HW = [(v["title"], os.path.relpath(Path(__file__).resolve().parents[2] / v["path"], ROOT),
        [(t["label"], t["id"], t["points"], t["bonus"]) for t in v["tasks"]])
       for v in MANIFEST.values()]
 

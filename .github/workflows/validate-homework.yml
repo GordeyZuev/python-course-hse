@@ -1,0 +1,19 @@
+name: Validate homework configurations
+on:
+  push:
+    branches: [course_2026]
+    paths: ['Materials/**/homework.json', 'Materials/**/test.py', 'Other/grading/**', '.github/workflows/validate-homework.yml']
+  pull_request:
+    paths: ['Materials/**/homework.json', 'Materials/**/test.py', 'Other/grading/**', '.github/workflows/validate-homework.yml']
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.repository == 'GordeyZuev/python-course-hse'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: python Other/grading/manifest.py

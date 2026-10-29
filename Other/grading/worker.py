@@ -9,6 +9,10 @@ import subprocess
 import tempfile
 import selectors
 import time
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from manifest import load_assignments
 
 
 COMPLETED = b'course-tests-completed\n'
@@ -91,7 +95,7 @@ def main():
     parser.add_argument('--trusted',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
-    hw=json.loads((args.trusted/'Other/tools/assignments.json').read_text())[args.hw]
+    hw=load_assignments(args.trusted)[args.hw]
     # Receipt time comes from GitHub, supplied by trusted workflow, never commit author time.
     created=os.environ['RUN_CREATED_AT']
     deadline=os.environ.get('COURSE_DEADLINE') or hw['deadline']
@@ -100,22 +104,26 @@ def main():
     result={'schema':1,'homework':args.hw,'sha':os.environ['GITHUB_SHA'],
             'run_id':int(os.environ['GITHUB_RUN_ID']), 'run_number':number,
             'created_at':created,'grader_sha':os.environ['GRADER_SHA'],'tasks':[]}
-    if dt.datetime.fromisoformat(created.replace('Z','+00:00')) > dt.datetime.fromisoformat(deadline):
-        result['status']='late'
-    elif number > limit:
+    late=dt.datetime.fromisoformat(created.replace('Z','+00:00')) > dt.datetime.fromisoformat(deadline)
+    if number > limit:
         result['status']='limit'
     else:
-        subprocess.run(['docker','build','-q','-t','hse-grading',str(args.trusted/'Other/grading')],check=True)
+        with tempfile.TemporaryDirectory() as directory:
+            context=Path(directory)/'grading'
+            shutil.copytree(args.trusted/'Other/grading',context)
+            (context/'requirements.txt').write_text('\n'.join(hw.get('dependencies',[]))+'\n')
+            subprocess.run(['docker','build','-q','-t','hse-grading',str(context)],check=True)
         result['tasks']=execute(hw,args.source,args.trusted,'hse-grading')
         result['score']=round(min(10,sum(t['points'] for t in result['tasks'])),2)
-        result['status']='graded'
+        result['status']='late' if late else 'graded'
+        result['credited_score']=0 if late else result['score']
     args.output.mkdir(parents=True,exist_ok=True)
     (args.output/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
-    labels={'graded':'Проверено','late':'Дедлайн прошёл; сдача не зачтена','limit':'Лимит попыток исчерпан'}
+    labels={'graded':'Проверено','late':'Сдано после дедлайна. Итог за эту сдачу — 0 / 10.','limit':'Лимит попыток исчерпан'}
     lines=[f'## {hw["title"]}',labels[result['status']]]
-    if result['status']=='graded':
-        lines.append(f'Попытка {number} / {limit}')
-        lines += [f'Балл за эту сдачу: **{result["score"]} / 10**','', '| Задача | Балл | Статус |','|---|---:|---|']
+    if result['status'] in ('graded','late'):
+        if not late:lines.append(f'Попытка {number} / {limit}')
+        lines += [f'Результат тестов: **{result["score"]} / 10**',f'Зачётный балл этой сдачи: **{result["credited_score"]} / 10**','', '| Задача | Балл | Статус |','|---|---:|---|']
         lines += [f'| {t["id"]} | {t["points"]} | {t["status"]} |' for t in result['tasks']]
     lines += ['', 'Официальная ведомость обновляется после проверки происхождения результата, раз в три часа.']
     Path(os.environ.get('GITHUB_STEP_SUMMARY',str(args.output/'summary.md'))).write_text('\n'.join(lines)+'\n')

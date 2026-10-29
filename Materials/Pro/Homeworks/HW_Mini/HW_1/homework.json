@@ -1,0 +1,115 @@
+{
+  "id": "pro-hw1",
+  "enabled": true,
+  "title": "HW 1",
+  "deadline": "2026-11-02T23:59:00+03:00",
+  "attempts": 4,
+  "tasks": [
+    {
+      "id": "01_line",
+      "label": "№1. line",
+      "points": 0.5,
+      "bonus": false,
+      "solution": "line.py"
+    },
+    {
+      "id": "02_ask",
+      "label": "№2. ask",
+      "points": 0.5,
+      "bonus": false,
+      "solution": "ask.py"
+    },
+    {
+      "id": "03_palindrome",
+      "label": "№3. palindrome",
+      "points": 0.5,
+      "bonus": false,
+      "solution": "palindrome.py"
+    },
+    {
+      "id": "04_polish",
+      "label": "№4. polish",
+      "points": 0.5,
+      "bonus": false,
+      "solution": "polish.py"
+    },
+    {
+      "id": "05_unpack",
+      "label": "№5. unpack",
+      "points": 1,
+      "bonus": false,
+      "solution": "unpack.py"
+    },
+    {
+      "id": "06_tune",
+      "label": "№6. tune",
+      "points": 1,
+      "bonus": false,
+      "solution": "tune.py"
+    },
+    {
+      "id": "07_make_fader",
+      "label": "№7. make_fader",
+      "points": 1,
+      "bonus": false,
+      "solution": "make_fader.py"
+    },
+    {
+      "id": "08_partial",
+      "label": "№8. partial",
+      "points": 1,
+      "bonus": false,
+      "solution": "partial.py"
+    },
+    {
+      "id": "09_vandal",
+      "label": "№9. vandal",
+      "points": 0.5,
+      "bonus": false,
+      "solution": "vandal.py"
+    },
+    {
+      "id": "10_shabbat",
+      "label": "№10. shabbat",
+      "points": 1,
+      "bonus": true,
+      "solution": "shabbat.py"
+    },
+    {
+      "id": "11_counted",
+      "label": "№11. counted",
+      "points": 0.5,
+      "bonus": false,
+      "solution": "counted.py"
+    },
+    {
+      "id": "12_html",
+      "label": "№12. html",
+      "points": 1,
+      "bonus": false,
+      "solution": "html.py"
+    },
+    {
+      "id": "13_fragile",
+      "label": "№13. fragile",
+      "points": 1,
+      "bonus": false,
+      "solution": "fragile.py"
+    },
+    {
+      "id": "14_memoize",
+      "label": "№14. memoize",
+      "points": 1,
+      "bonus": false,
+      "solution": "memoize.py"
+    },
+    {
+      "id": "15_silent",
+      "label": "№15. silent",
+      "points": 1,
+      "bonus": true,
+      "solution": "silent.py"
+    }
+  ],
+  "dependencies": []
+}

@@ -1,0 +1,94 @@
+{
+  "id": "pro-hw2",
+  "enabled": true,
+  "title": "HW 2",
+  "deadline": "2026-11-12T23:59:00+03:00",
+  "attempts": 4,
+  "tasks": [
+    {
+      "id": "01_take",
+      "label": "№1. take",
+      "points": 0.5,
+      "bonus": false,
+      "solution": "take.py"
+    },
+    {
+      "id": "02_running",
+      "label": "№2. running",
+      "points": 0.6,
+      "bonus": false,
+      "solution": "running.py"
+    },
+    {
+      "id": "03_chain",
+      "label": "№3. chain",
+      "points": 0.7,
+      "bonus": false,
+      "solution": "chain.py"
+    },
+    {
+      "id": "04_replay",
+      "label": "№4. replay",
+      "points": 0.7,
+      "bonus": false,
+      "solution": "replay.py"
+    },
+    {
+      "id": "05_window",
+      "label": "№5. window",
+      "points": 0.8,
+      "bonus": false,
+      "solution": "window.py"
+    },
+    {
+      "id": "06_group_runs",
+      "label": "№6. group_runs",
+      "points": 0.8,
+      "bonus": false,
+      "solution": "group_runs.py"
+    },
+    {
+      "id": "07_pad_zip",
+      "label": "№7. pad_zip",
+      "points": 0.8,
+      "bonus": false,
+      "solution": "pad_zip.py"
+    },
+    {
+      "id": "08_calls",
+      "label": "№8. calls",
+      "points": 0.9,
+      "bonus": false,
+      "solution": "calls.py"
+    },
+    {
+      "id": "09_shift",
+      "label": "№9. shift",
+      "points": 0.9,
+      "bonus": false,
+      "solution": "shift.py"
+    },
+    {
+      "id": "10_read_lines",
+      "label": "№10. read_lines",
+      "points": 1,
+      "bonus": false,
+      "solution": "read_lines.py"
+    },
+    {
+      "id": "11_save_total",
+      "label": "№11. save_total",
+      "points": 1.1,
+      "bonus": false,
+      "solution": "save_total.py"
+    },
+    {
+      "id": "12_round_robin",
+      "label": "№12. round_robin",
+      "points": 1.2,
+      "bonus": false,
+      "solution": "round_robin.py"
+    }
+  ],
+  "dependencies": []
+}
