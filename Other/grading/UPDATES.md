@@ -2,8 +2,8 @@
 
 | Источник | Назначение | Ветка |
 |---|---|---|
-| `origin` — ваш приватный репозиторий | Решения, новые заготовки и настройки проверки | `main` |
-| `upstream` — общий репозиторий курса | Условия, тесты, лекции и исправления | `course_2026` |
+| `origin` – ваш приватный репозиторий | Решения, новые заготовки и настройки проверки | `main` |
+| `upstream` – общий репозиторий курса | Условия, тесты, лекции и исправления | `course_2026` |
 
 ## Настроить один раз
 
@@ -29,10 +29,8 @@ git remote add upstream https://github.com/GordeyZuev/python-course-hse.git
 
 ```bash
 git switch main
-git fetch origin
-git merge --no-edit origin/main
-git fetch upstream
-git merge --no-edit upstream/course_2026
+git pull --no-rebase --no-edit origin main
+git pull --no-rebase --no-edit upstream course_2026
 ```
 
 Сначала обновляется ваш репозиторий, затем общие материалы. **Push после этого
@@ -48,8 +46,7 @@ git merge --no-edit upstream/course_2026
 его коммитом. Перед отправкой получите последние изменения origin:
 
 ```bash
-git fetch origin
-git merge --no-edit origin/main
+git pull --no-rebase --no-edit origin main
 git diff --name-only origin/main HEAD
 ```
 
@@ -72,7 +69,7 @@ Push только условий или тестов попытку не рас�
 сохранив своё решение, затем выполните `git add` для них и `git merge --continue`.
 Чтобы отменить слияние, используйте `git merge --abort`: ранее сохранённые коммиты останутся.
 
-**Push rejected / non-fast-forward.** Повторите `fetch` и `merge` из раздела отправки,
+**Push rejected / non-fast-forward.** Повторите команды из раздела отправки,
 проверьте результат и снова сделайте push. `push --force` не нужен.
 
 **Неверный адрес upstream.** Исправьте его:
