@@ -125,7 +125,7 @@ def main():
         if not late:lines.append(f'Попытка {number} / {limit}')
         lines += [f'Результат тестов: **{result["score"]} / 10**',f'Зачётный балл этой сдачи: **{result["credited_score"]} / 10**','', '| Задача | Балл | Статус |','|---|---:|---|']
         lines += [f'| {t["id"]} | {t["points"]} | {t["status"]} |' for t in result['tasks']]
-    lines += ['', 'Официальная ведомость обновляется после проверки происхождения результата, раз в три часа.']
+    lines += ['', 'Результаты доступны здесь. Ведомость обновляется раз в день.']
     Path(os.environ.get('GITHUB_STEP_SUMMARY',str(args.output/'summary.md'))).write_text('\n'.join(lines)+'\n')
 
 if __name__=='__main__': main()
