@@ -33,7 +33,6 @@ git remote add upstream https://github.com/GordeyZuev/python-course-hse.git
 ```bash
 git config --local pull.rebase false
 git config --local pull.ff true
-git config --local merge.autoEdit no
 ```
 
 ## Получить обновления
@@ -44,8 +43,8 @@ git config --local merge.autoEdit no
 до перехода к следующей команде.
 
 ```bash
-git pull origin main
-git pull upstream course_2026
+git pull --no-edit origin main
+git pull --no-edit upstream course_2026
 ```
 
 Команды выполняются в ветке `main`. Сначала обновляется ваш репозиторий,
@@ -101,7 +100,7 @@ Push только условий или тестов попытку не рас�
 сохранив своё решение, затем выполните `git add` для них и `git merge --continue`.
 Чтобы отменить слияние, используйте `git merge --abort`: ранее сохранённые коммиты останутся.
 
-**Push rejected / non-fast-forward.** Выполните `git pull origin main`, проверьте
+**Push rejected / non-fast-forward.** Выполните `git pull --no-edit origin main`, проверьте
 список файлов из раздела отправки и снова сделайте push. `push --force` не используйте.
 
 **Неверный адрес upstream.** Исправьте его:
