@@ -47,24 +47,36 @@ def bounded_run(command, timeout, max_bytes=4096):
 def execute(hw, source, trusted, image):
     results = []
     for task in hw['tasks']:
+        if task.get('mode') == 'manual':
+            results.append({'id':task['id'], 'status':'manual', 'points':0})
+            continue
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
             reference = trusted / hw['path']
             shutil.copytree(reference, work / 'hw', ignore=shutil.ignore_patterns('__pycache__', '.venv', '.pytest_cache'))
             # Only regular solution files may cross the trust boundary.
-            for item in hw['tasks']:
-                target = work / 'hw' / item['id'] / item['solution']
-                candidate = source / hw['path'] / item['id'] / item['solution']
-                if candidate.is_file() and not candidate.is_symlink() and candidate.resolve().is_relative_to(source.resolve()):
+            if hw.get('submission'):
+                target = work / 'hw' / hw['submission']
+                candidate = source / hw['path'] / hw['submission']
+                if candidate.is_file() and not candidate.is_symlink() and candidate.resolve().is_relative_to(source.resolve()) and candidate.stat().st_size <= 20_000_000:
                     shutil.copyfile(candidate, target)
                 else:
-                    target.write_text('raise NotImplementedError("No solution submitted")\n')
+                    target.write_text('{}\n')
+            else:
+                for item in hw['tasks']:
+                    target = work / 'hw' / item['id'] / item['solution']
+                    candidate = source / hw['path'] / item['id'] / item['solution']
+                    if candidate.is_file() and not candidate.is_symlink() and candidate.resolve().is_relative_to(source.resolve()):
+                        shutil.copyfile(candidate, target)
+                    else:
+                        target.write_text('raise NotImplementedError("No solution submitted")\n')
             name = 'hse-' + os.urandom(8).hex()
             command = ['docker', 'run', '--name', name, '--network=none', '--read-only',
                        '--cap-drop=ALL', '--security-opt=no-new-privileges', '--pids-limit=64',
                        '--memory=256m', '--cpus=1', '--user=65534:65534',
                        '--tmpfs=/tmp:rw,nosuid,size=64m', '-v', f'{work}/hw:/input:ro',
-                       '-w', '/tmp', image, 'python', '-I', '/checker.py', task['id']]
+                       '-w', '/tmp', image, 'python', '-I', '/checker.py',
+                       *(['--notebook',hw['submission'],task['function']] if hw.get('submission') else [task['id']])]
             try:
                 code, output = bounded_run(command, timeout=20)
                 if code != -1:
@@ -119,12 +131,13 @@ def main():
         result['credited_score']=0 if late else result['score']
     args.output.mkdir(parents=True,exist_ok=True)
     (args.output/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
-    labels={'graded':'Проверено','late':'Сдано после дедлайна. Итог за эту сдачу — 0 / 10.','limit':'Лимит попыток исчерпан'}
+    labels={'graded':'Проверено','late':'Сдано после дедлайна. Итог за эту сдачу – 0 / 10.','limit':'Лимит попыток исчерпан'}
+    auto_max=round(sum(t['points'] for t in hw['tasks'] if t.get('mode','auto')=='auto'),2)
     lines=[f'## {hw["title"]}',labels[result['status']]]
     if result['status'] in ('graded','late'):
         if not late:lines.append(f'Попытка {number} / {limit}')
-        lines += [f'Результат тестов: **{result["score"]} / 10**',f'Зачётный балл этой сдачи: **{result["credited_score"]} / 10**','', '| Задача | Балл | Статус |','|---|---:|---|']
-        lines += [f'| {t["id"]} | {t["points"]} | {t["status"]} |' for t in result['tasks']]
+        lines += [f'Результат тестов: **{result["score"]} / {auto_max}**',f'Зачётный автоматический балл этой сдачи: **{result["credited_score"]} / {auto_max}**','', '| Задача | Балл | Статус |','|---|---:|---|']
+        lines += [f'| {t["id"]} | {t["points"] if t["status"]!="manual" else "–"} | {t["status"] if t["status"]!="manual" else "Проверит ассистент"} |' for t in result['tasks']]
     lines += ['', 'Результаты доступны здесь. Ведомость обновляется раз в день.']
     Path(os.environ.get('GITHUB_STEP_SUMMARY',str(args.output/'summary.md'))).write_text('\n'.join(lines)+'\n')
 

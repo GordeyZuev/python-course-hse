@@ -38,6 +38,11 @@ def main():
         return check(script)
     try:
         shutil.copytree('/input', '/tmp/hw')
+        if sys.argv[1] == '--notebook':
+            os.chdir('/tmp/hw')
+            sys.path.insert(0, os.getcwd())
+            sys.argv = ['notebook_check.py', sys.argv[2], sys.argv[3]]
+            return check('/notebook_check.py')
         os.chdir('/tmp/hw/' + sys.argv[1])
     except OSError:
         os.write(1, b'course-infrastructure-error\n')

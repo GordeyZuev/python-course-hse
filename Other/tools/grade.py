@@ -20,12 +20,6 @@ import os
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "grading"))
 from manifest import load_assignments
 MANIFEST = load_assignments(Path(__file__).resolve().parents[2])
-HW = [(v["title"], os.path.relpath(Path(__file__).resolve().parents[2] / v["path"], ROOT),
-       [(t["label"], t["id"], t["points"], t["bonus"]) for t in v["tasks"]])
-      for v in MANIFEST.values()]
-
-
-
 def fmt(value):
     number = float(value)
     if number.is_integer():
@@ -49,8 +43,30 @@ def earned(folder, name):
     return completed.returncode == 0 and completed.stdout == b"course-tests-completed\n"
 
 
-def report(title, folder, tasks):
-    print(title)
+def report(hw):
+    print(hw['title'])
+    if hw.get('submission'):
+        notebook=Path(__file__).resolve().parents[2] / hw['path'] / hw['submission']
+        earned_auto=0
+        for task in hw['tasks']:
+            if task['mode']=='manual':
+                print(f'{task["label"]}: проверит ассистент')
+                continue
+            try:
+                completed=subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/'grading/notebook_check.py'),
+                                          str(notebook),task['function']],cwd=notebook.parent,
+                                         stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True,timeout=TEST_TIMEOUT_SECONDS)
+                passed=completed.returncode==0
+                if not passed and completed.stderr:
+                    print('  '+completed.stderr.strip().splitlines()[-1])
+            except subprocess.TimeoutExpired:passed=False
+            got=task['points'] if passed else 0
+            earned_auto+=got
+            print(f'{task["label"]}: {fmt(got)} / {fmt(task["points"])}')
+        print(f'Автоматический результат: {fmt(earned_auto)} / 5\n')
+        return
+    folder=os.path.relpath(Path(__file__).resolve().parents[2] / hw['path'],ROOT)
+    tasks=[(t['label'],t['id'],t['points'],t['bonus']) for t in hw['tasks']]
     required = 0
     bonus = 0
     for label, name, points, is_bonus in tasks:
@@ -77,9 +93,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--hw", choices=MANIFEST)
     args = parser.parse_args()
-    for key, (title, folder, tasks) in zip(MANIFEST, HW):
+    for key,hw in MANIFEST.items():
         if args.hw is None or key == args.hw:
-            report(title, folder, tasks)
+            report(hw)
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ def load_assignments(root):
             raise ValueError(f'{config}: enabled must be true or false')
         if not value['enabled']:
             continue
-        unknown = value.keys() - {'id', 'enabled', 'title', 'deadline', 'attempts', 'tasks', 'dependencies'}
+        unknown = value.keys() - {'id', 'enabled', 'title', 'deadline', 'attempts', 'tasks', 'dependencies', 'submission'}
         if unknown:
             raise ValueError(f'{config}: unknown settings: {sorted(unknown)}')
         key = value.get('id')
@@ -43,23 +43,38 @@ def load_assignments(root):
         tasks = value.get('tasks')
         if not isinstance(tasks, list) or not tasks:
             raise ValueError(f'{key}: at least one task is required')
+        notebook = value.get('submission')
+        if notebook is not None:
+            if not component(notebook) or not notebook.endswith('.ipynb') or not (config.parent / notebook).is_file():
+                raise ValueError(f'{key}: submission must name an existing notebook')
+            if not (config.parent / 'Other/grading_checks.py').is_file():
+                raise ValueError(f'{key}: notebook needs Other/grading_checks.py')
         seen = set()
+        seen_functions = set()
         for task in tasks:
-            if not isinstance(task, dict) or task.keys() != {'id', 'label', 'points', 'bonus', 'solution'}:
-                raise ValueError(f'{key}: task needs id, label, points, bonus, solution')
+            fields = {'id', 'label', 'points', 'bonus', 'function', 'mode'} if notebook else {'id', 'label', 'points', 'bonus', 'solution'}
+            if not isinstance(task, dict) or task.keys() != fields:
+                raise ValueError(f'{key}: invalid task fields')
             if not component(task['id']) or task['id'] in seen:
                 raise ValueError(f'{key}: invalid or duplicate task id')
             seen.add(task['id'])
-            if not component(task['solution']) or not task['solution'].endswith('.py') or task['solution'] == 'test.py':
+            if notebook:
+                if task['mode'] not in ('auto', 'manual') or (task['mode']=='auto' and not component(task['function'])) or (task['mode']=='manual' and task['function'] is not None):
+                    raise ValueError(f'{key}: invalid notebook task mode or function')
+                if task['mode']=='auto':
+                    if task['function'] in seen_functions:raise ValueError(f'{key}: duplicate notebook function')
+                    seen_functions.add(task['function'])
+            elif not component(task['solution']) or not task['solution'].endswith('.py') or task['solution'] == 'test.py':
                 raise ValueError(f'{key}: solution must be a Python filename other than test.py')
             if type(task['points']) not in (int, float) or not math.isfinite(task['points']) or not 0 < task['points'] <= 10:
                 raise ValueError(f'{key}: invalid task points')
             if type(task['bonus']) is not bool or not isinstance(task['label'], str) or not task['label'].strip():
                 raise ValueError(f'{key}: invalid task label or bonus')
-            for name in (task['solution'], 'test.py'):
-                path = config.parent / task['id'] / name
-                if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(config.parent.resolve()):
-                    raise ValueError(f'{key}: missing or unsafe file: {path}')
+            if not notebook:
+                for name in (task['solution'], 'test.py'):
+                    path = config.parent / task['id'] / name
+                    if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(config.parent.resolve()):
+                        raise ValueError(f'{key}: missing or unsafe file: {path}')
         dependencies = value.get('dependencies', [])
         if not isinstance(dependencies, list) or any(not isinstance(item, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*==[A-Za-z0-9][A-Za-z0-9_.+!-]*', item) for item in dependencies):
             raise ValueError(f'{key}: dependencies must be pinned package==version strings')

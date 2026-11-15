@@ -1,0 +1,151 @@
+{
+  "id": "pro-big-hw1",
+  "enabled": false,
+  "title": "Big HW 1",
+  "deadline": "2026-11-29T23:59:00+03:00",
+  "attempts": 4,
+  "submission": "HW_1.ipynb",
+  "tasks": [
+    {
+      "id": "01",
+      "label": "№1. Вырезать удачный кадр",
+      "points": 0.3,
+      "bonus": false,
+      "function": "crop_image",
+      "mode": "auto"
+    },
+    {
+      "id": "02",
+      "label": "№2. Обвести нужную область",
+      "points": 0.3,
+      "bonus": false,
+      "function": "draw_frame",
+      "mode": "auto"
+    },
+    {
+      "id": "03",
+      "label": "№3. Вернуть диапазон цветов",
+      "points": 0.3,
+      "bonus": false,
+      "function": "calibrate",
+      "mode": "auto"
+    },
+    {
+      "id": "04",
+      "label": "№4. Найти изменения",
+      "points": 0.4,
+      "bonus": false,
+      "function": "pixel_error",
+      "mode": "auto"
+    },
+    {
+      "id": "05",
+      "label": "№5. Оценить различия изображений",
+      "points": 0.4,
+      "bonus": false,
+      "function": "mean_error",
+      "mode": "auto"
+    },
+    {
+      "id": "06",
+      "label": "№6. Найти синюю шапку",
+      "points": 0.4,
+      "bonus": false,
+      "function": "blue_mask",
+      "mode": "auto"
+    },
+    {
+      "id": "07",
+      "label": "№7. Примерить другой цвет шапки",
+      "points": 0.5,
+      "bonus": false,
+      "function": "recolor_region",
+      "mode": "auto"
+    },
+    {
+      "id": "08",
+      "label": "№8. Воспроизвести сбой передачи",
+      "points": 0.5,
+      "bonus": false,
+      "function": "drop_pixels",
+      "mode": "auto"
+    },
+    {
+      "id": "09",
+      "label": "№9. Сделать быстрое превью",
+      "points": 0.6,
+      "bonus": false,
+      "function": "block_preview",
+      "mode": "auto"
+    },
+    {
+      "id": "10",
+      "label": "№10. Узнать, что осталось рядом",
+      "points": 0.6,
+      "bonus": false,
+      "function": "neighbor_stats",
+      "mode": "auto"
+    },
+    {
+      "id": "11",
+      "label": "№11. Сделать один шаг восстановления",
+      "points": 0.7,
+      "bonus": false,
+      "function": "repair_step",
+      "mode": "auto"
+    },
+    {
+      "id": "12",
+      "label": "№12. Получить первое восстановление",
+      "points": 0.5,
+      "bonus": false,
+      "function": null,
+      "mode": "manual"
+    },
+    {
+      "id": "13",
+      "label": "№13. Найти слабое место",
+      "points": 1,
+      "bonus": false,
+      "function": null,
+      "mode": "manual"
+    },
+    {
+      "id": "14",
+      "label": "№14. Попробовать другую идею",
+      "points": 1.5,
+      "bonus": false,
+      "function": null,
+      "mode": "manual"
+    },
+    {
+      "id": "15",
+      "label": "№15. Выбрать настройку",
+      "points": 1.25,
+      "bonus": false,
+      "function": null,
+      "mode": "manual"
+    },
+    {
+      "id": "16",
+      "label": "№16. Получить итоговый снимок",
+      "points": 0.75,
+      "bonus": false,
+      "function": null,
+      "mode": "manual"
+    },
+    {
+      "id": "bonus",
+      "label": "Отзыв о ДЗ",
+      "points": 0.2,
+      "bonus": true,
+      "function": null,
+      "mode": "manual"
+    }
+  ],
+  "dependencies": [
+    "numpy==2.5.4",
+    "matplotlib==3.11.2",
+    "pillow==13.0.0"
+  ]
+}
