@@ -28,6 +28,10 @@ def array(actual, expected, dtype=None, *, atol=1e-8):
     np.testing.assert_allclose(actual, expected, rtol=1e-7, atol=atol, equal_nan=True)
 
 
+def input_precision_tolerance(dtype):
+    return max(1e-8, float(np.finfo(dtype).eps) * 255)
+
+
 def raises_value_error(function, *args):
     try:
         call(function, *args)
@@ -98,8 +102,8 @@ def test_calibrate(f):
                          (white.astype(float)-black.astype(float)),0,255)
         # Float16/float32 inputs can round intermediate values before the
         # required float64 result is produced. Allow input-scale precision.
-        tolerance=max(1e-8,float(np.finfo(dtype).eps)*255)
-        array(call(f,a,black,white),expected,np.float64,atol=tolerance)
+        array(call(f,a,black,white),expected,np.float64,
+              atol=input_precision_tolerance(dtype))
 
 
 def test_pixel_error(f):
@@ -159,7 +163,7 @@ def test_recolor_region(f):
         expected=a.astype(float)
         expected[mask]=(1-alpha)*expected[mask]+alpha*a.max(axis=2)[mask,None]*(c/c.max())
         out=call(f,a,mask,color,strength)
-        array(out,expected,np.float64)
+        array(out,expected,np.float64,atol=input_precision_tolerance(dtype))
         np.testing.assert_array_equal(out[~mask],a[~mask])
 
 
