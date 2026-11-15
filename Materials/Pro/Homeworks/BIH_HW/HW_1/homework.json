@@ -1,6 +1,6 @@
 {
   "id": "pro-big-hw1",
-  "enabled": false,
+  "enabled": true,
   "title": "Big HW 1",
   "deadline": "2026-11-29T23:59:00+03:00",
   "attempts": 4,
