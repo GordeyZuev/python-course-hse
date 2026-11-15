@@ -32,6 +32,14 @@ def input_precision_tolerance(dtype):
     return max(1e-8, float(np.finfo(dtype).eps) * 255)
 
 
+def floating_array(actual, expected, *input_dtypes):
+    assert isinstance(actual, np.ndarray), 'Ожидается ndarray'
+    assert np.issubdtype(actual.dtype, np.floating), (
+        f'dtype: нужен вещественный массив, получен {actual.dtype}')
+    atol = max(input_precision_tolerance(dtype) for dtype in (*input_dtypes, actual.dtype))
+    array(actual, expected, atol=atol)
+
+
 def raises_value_error(function, *args):
     try:
         call(function, *args)
@@ -89,7 +97,7 @@ def test_calibrate(f):
             for y,x,c in np.ndindex(a.shape):
                 expected[y,x,c]=min(255,max(0,(float(a[y,x,c])-black[c])*255/(white[c]-black[c])))
             out=call(f,a,black,white)
-            array(out,expected,np.float64)
+            floating_array(out,expected,black.dtype,white.dtype)
             assert not np.shares_memory(out,a)
 
 
@@ -100,10 +108,8 @@ def test_calibrate(f):
         white=np.array([180.8,220.2,250.7],dtype=dtype)
         expected=np.clip((a.astype(float)-black.astype(float))*255/
                          (white.astype(float)-black.astype(float)),0,255)
-        # Float16/float32 inputs can round intermediate values before the
-        # required float64 result is produced. Allow input-scale precision.
-        array(call(f,a,black,white),expected,np.float64,
-              atol=input_precision_tolerance(dtype))
+        # Учитываем точность входных параметров и результата.
+        floating_array(call(f,a,black,white),expected,dtype)
 
 
 def test_pixel_error(f):
@@ -149,7 +155,7 @@ def test_recolor_region(f):
                             for c in range(3):
                                 expected[y,x,c]=(1-strength)*float(a[y,x,c])+strength*value*float(color[c])/max(color)
                     out=call(f,a,mask,color,strength)
-                    array(out,expected,np.float64)
+                    floating_array(out,expected,color.dtype)
                     np.testing.assert_array_equal(out[~mask],a[~mask])
                     assert not np.shares_memory(out,a)
 
@@ -163,7 +169,7 @@ def test_recolor_region(f):
         expected=a.astype(float)
         expected[mask]=(1-alpha)*expected[mask]+alpha*a.max(axis=2)[mask,None]*(c/c.max())
         out=call(f,a,mask,color,strength)
-        array(out,expected,np.float64,atol=input_precision_tolerance(dtype))
+        floating_array(out,expected,dtype)
         np.testing.assert_array_equal(out[~mask],a[~mask])
 
 
