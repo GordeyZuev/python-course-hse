@@ -19,13 +19,13 @@ def call(function, *args):
             np.testing.assert_array_equal(value, before, err_msg='Изменён входной массив')
 
 
-def array(actual, expected, dtype=None):
+def array(actual, expected, dtype=None, *, atol=1e-8):
     assert isinstance(actual, np.ndarray), 'Ожидается ndarray'
     expected = np.asarray(expected)
     assert actual.shape == expected.shape, f'Форма {actual.shape}, ожидается {expected.shape}'
     if dtype is not None:
         assert actual.dtype == np.dtype(dtype), f'dtype: нужен {np.dtype(dtype)}, получен {actual.dtype}'
-    np.testing.assert_allclose(actual, expected, rtol=1e-7, atol=1e-8, equal_nan=True)
+    np.testing.assert_allclose(actual, expected, rtol=1e-7, atol=atol, equal_nan=True)
 
 
 def raises_value_error(function, *args):
@@ -96,7 +96,10 @@ def test_calibrate(f):
         white=np.array([180.8,220.2,250.7],dtype=dtype)
         expected=np.clip((a.astype(float)-black.astype(float))*255/
                          (white.astype(float)-black.astype(float)),0,255)
-        array(call(f,a,black,white),expected,np.float64)
+        # Float16/float32 inputs can round intermediate values before the
+        # required float64 result is produced. Allow input-scale precision.
+        tolerance=max(1e-8,float(np.finfo(dtype).eps)*255)
+        array(call(f,a,black,white),expected,np.float64,atol=tolerance)
 
 
 def test_pixel_error(f):
